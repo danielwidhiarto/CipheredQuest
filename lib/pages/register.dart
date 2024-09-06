@@ -88,7 +88,6 @@ class _RegisterPageState extends State<RegisterPage> {
         'email': email,
         'username': username,
         'createdAt': Timestamp.now(),
-        'isVerified': false,
       });
 
       // Send email verification link
