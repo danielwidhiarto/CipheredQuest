@@ -14,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String _errorMessage = ''; // Error message state
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -26,50 +27,55 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showErrorDialog("Please fill in both email and password.");
+      setState(() {
+        _errorMessage = "Please fill in both email and password.";
+      });
       return;
     }
 
     try {
-      // Sign in the user using Firebase Auth
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
 
-      // Check if email is verified
       if (!userCredential.user!.emailVerified) {
-        _showErrorDialog("Email is not verified. Please check your inbox.");
+        setState(() {
+          _errorMessage = "Email is not verified. Please check your inbox.";
+        });
         return;
       }
 
-      // If login is successful and email is verified, navigate to the HomePage
+      // If login is successful, navigate to HomePage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } catch (e) {
-      _showErrorDialog(e.toString());
-    }
-  }
+      String errorMessage;
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = 'No user found for that email.';
+            break;
+          case 'wrong-password':
+            errorMessage = 'Incorrect password. Please try again.';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Invalid email format. Please enter a valid email.';
+            break;
+          case 'user-disabled':
+            errorMessage = 'This user account has been disabled.';
+            break;
+          default:
+            errorMessage = 'Login failed. Please try again later.';
+        }
+      } else {
+        errorMessage = 'An unknown error occurred. Please try again.';
+      }
 
-  // Helper function to show error dialog
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+      setState(() {
+        _errorMessage = errorMessage; // Display user-friendly error message
+      });
+    }
   }
 
   @override
@@ -123,6 +129,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+
+            // Display error message if exists
+            if (_errorMessage.isNotEmpty)
+              Text(
+                _errorMessage,
+                style: const TextStyle(color: Colors.red, fontSize: 14),
+              ),
             const SizedBox(height: 24),
 
             ElevatedButton(
