@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "388888815711",
+    "project_id": "ciphered-quest-4fcd9",
+    "storage_bucket": "ciphered-quest-4fcd9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:388888815711:android:e4fbe8f1640bf95e0453ea",
+        "android_client_info": {
+          "package_name": "com.ciphered.ciphered_quest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtX1WWPPE0Dz2FoF9c6I-Zow17m4igdKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:388888815711:android:45f2712bec5a011c0453ea",
+        "android_client_info": {
+          "package_name": "com.ciphered_quest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtX1WWPPE0Dz2FoF9c6I-Zow17m4igdKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
