@@ -1,29 +1,7 @@
+import 'package:ciphered_quest/pages/home.dart';
 import 'package:ciphered_quest/pages/register.dart';
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Login & Register Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF776B5D),
-          primary: const Color(0xFF776B5D),
-          secondary: const Color(0xFFF3EEEA),
-        ),
-        useMaterial3: true,
-      ),
-      home: const LoginPage(),
-    );
-  }
-}
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -41,6 +19,57 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _obscurePassword = !_obscurePassword;
     });
+  }
+
+  Future<void> _loginUser() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showErrorDialog("Please fill in both email and password.");
+      return;
+    }
+
+    try {
+      // Sign in the user using Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      // Check if email is verified
+      if (!userCredential.user!.emailVerified) {
+        _showErrorDialog("Email is not verified. Please check your inbox.");
+        return;
+      }
+
+      // If login is successful and email is verified, navigate to the HomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    }
+  }
+
+  // Helper function to show error dialog
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -97,14 +126,9 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: () {
-                final email = _emailController.text;
-                final password = _passwordController.text;
-                // Implement your login logic here
-                print('Email: $email, Password: $password');
-              },
+              onPressed: _loginUser,
               style: buttonStyle.copyWith(
-                backgroundColor: MaterialStateProperty.all(const Color(0xFF776B5D)), // Custom background color
+                backgroundColor: MaterialStateProperty.all(const Color(0xFF776B5D)),
               ),
               child: const Text(
                 'Login',
@@ -151,7 +175,8 @@ class _LoginPageState extends State<LoginPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const RegisterPage()),
+                        builder: (context) => const RegisterPage(),
+                      ),
                     );
                   },
                   child: const Text(
