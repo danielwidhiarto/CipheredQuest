@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciphered_quest/pages/login.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -26,6 +28,109 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _obscureConfirmPassword = !_obscureConfirmPassword;
     });
+  }
+
+  void _registerUser() async {
+    final email = _emailController.text;
+    final username = _usernameController.text;
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (password != confirmPassword) {
+      _showErrorDialog("Passwords do not match. Please try again.");
+      return;
+    }
+
+    try {
+      // Check if email or username already exists
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        _showErrorDialog("Email already exists. Please try a different one.");
+        return;
+      }
+
+      final usernameSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .get();
+
+      if (usernameSnapshot.docs.isNotEmpty) {
+        _showErrorDialog("Username already exists. Please try a different one.");
+        return;
+      }
+
+      // Register user with Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Add user to Firestore database
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'email': email,
+        'username': username,
+        'createdAt': Timestamp.now(),
+        'isVerified': false,
+      });
+
+      // Send email verification link
+      await userCredential.user!.sendEmailVerification();
+
+      // Show success dialog
+      _showSuccessDialog("Registration successful! Please check your email to verify your account.");
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    }
+  }
+
+  // Helper function to show error dialog
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Helper function to show success dialog
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Registration Successful'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -114,59 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: () {
-                final email = _emailController.text;
-                final username = _usernameController.text;
-                final password = _passwordController.text;
-                final confirmPassword = _confirmPasswordController.text;
-
-                if (password == confirmPassword) {
-                  // Implement registration logic here
-                  print('Email: $email, Username: $username, Password: $password');
-
-                  // Show success dialog
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Registration Successful'),
-                        content: const Text('You have successfully registered!'),
-                        actions: <Widget>[
-                          TextButton(
-                            child: const Text('OK'),
-                            onPressed: () {
-                              Navigator.of(context).pop(); // Close the dialog
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const LoginPage()),
-                              ); // Navigate to login page
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                } else {
-                  // Show error dialog for password mismatch
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Error'),
-                        content: const Text('Passwords do not match. Please try again.'),
-                        actions: <Widget>[
-                          TextButton(
-                            child: const Text('OK'),
-                            onPressed: () {
-                              Navigator.of(context).pop(); // Close the dialog
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
+              onPressed: _registerUser,
               style: buttonStyle.copyWith(
                 backgroundColor: MaterialStateProperty.all(const Color(0xFF776B5D)),
               ),
